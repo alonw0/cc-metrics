@@ -54,7 +54,7 @@ OpenTelemetry Collector (:4318/:4317)
 ### 1. Clone or Download This Repository
 
 ```bash
-cd claude-metrics2
+cd cc-metrics
 ```
 
 ### 2. Set Up Data Directories
