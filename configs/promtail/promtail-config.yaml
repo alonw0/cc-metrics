@@ -1,0 +1,91 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: debug
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # First scrape config - extracts logRecords[0] (tool_decision, user_prompt, etc.)
+  - job_name: otel-logs-record-0
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: claude-code
+          __path__: /var/log/otel/*.json
+
+    pipeline_stages:
+      # Parse JSON to extract body field from first logRecord
+      - json:
+          expressions:
+            body_content: resourceLogs[0].scopeLogs[0].logRecords[0].body.stringValue
+
+      # Extract event_name from the body field
+      - regex:
+          source: body_content
+          expression: '.*event_name=(?P<event_name>\S+)'
+
+      - labels:
+          event_name:
+
+      # Extract prompt_length from the body field
+      - regex:
+          source: body_content
+          expression: '.*prompt_length=(?P<prompt_length>\d+)'
+
+      # Add prompt_length to structured metadata
+      - structured_metadata:
+          prompt_length:
+
+      # Extract tool_name from the body field
+      - regex:
+          source: body_content
+          expression: '.*tool_name=(?P<tool_name>\S+)'
+
+      # Add tool_name as a label for filtering
+      - labels:
+          tool_name:
+
+  # Second scrape config - extracts logRecords[1] (tool_result events)
+  - job_name: otel-logs-record-1
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: claude-code
+          __path__: /var/log/otel/*.json
+
+    pipeline_stages:
+      # Parse JSON to extract body field from second logRecord
+      - json:
+          expressions:
+            body_content: resourceLogs[0].scopeLogs[0].logRecords[1].body.stringValue
+
+      # Drop logs where logRecords[1] doesn't exist
+      - match:
+          selector: '{job="claude-code"}'
+          stages:
+            - drop:
+                expression: "^$"
+
+      # Extract event_name from the body field
+      - regex:
+          source: body_content
+          expression: '.*event_name=(?P<event_name>\S+)'
+
+      - labels:
+          event_name:
+
+      # Extract tool_name from the body field
+      - regex:
+          source: body_content
+          expression: '.*tool_name=(?P<tool_name>\S+)'
+
+      # Add tool_name as a label for filtering
+      - labels:
+          tool_name:

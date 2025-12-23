@@ -1,0 +1,26 @@
+groups:
+  - name: claude_code_aggregations
+    interval: 30s
+    rules:
+      - record: claude_code:cache_efficiency:ratio
+        expr: |
+          sum(rate(claude_code_token_usage_tokens_total{type="cacheRead"}[5m]))
+          /
+          (
+            sum(rate(claude_code_token_usage_tokens_total{type="cacheRead"}[5m]))
+            +
+            sum(rate(claude_code_token_usage_tokens_total{type="input"}[5m]))
+          )
+
+      - record: claude_code:cost_per_1k_tokens:ratio
+        expr: |
+          sum(rate(claude_code_cost_usage_USD_total[5m]))
+          /
+          sum(rate(claude_code_token_usage_tokens_total{type="output"}[5m]))
+          * 1000
+
+      - record: claude_code:productivity:ratio
+        expr: |
+          sum(rate(claude_code_active_time_seconds_total{type="cli"}[5m]))
+          /
+          sum(rate(claude_code_active_time_seconds_total{type="user"}[5m]))

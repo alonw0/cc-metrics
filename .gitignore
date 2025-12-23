@@ -1,0 +1,28 @@
+# Data directories - contain persistent storage
+data/prometheus/*
+data/grafana/*
+
+# Keep the directory structure but ignore contents
+!data/prometheus/.gitkeep
+!data/grafana/.gitkeep
+
+# Environment files
+.env
+
+# Docker volumes
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
